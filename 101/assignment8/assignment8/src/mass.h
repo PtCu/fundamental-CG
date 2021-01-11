@@ -15,11 +15,11 @@ struct Mass {
   bool pinned;
 
   Vector2D start_position;
-  Vector2D position;
+  Vector2D position;  //x(t)
 
   // explicit Verlet integration
 
-  Vector2D last_position;
+  Vector2D last_position; //即x(t-1)
 
   // explicit Euler integration
 
