@@ -1,6 +1,0 @@
-{
-    "cmake.sourceDirectory": "${workspaceFolder}/Assignment7",
-    "files.associations": {
-        "array": "cpp"
-    }
-}

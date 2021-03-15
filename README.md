@@ -1,6 +1,8 @@
 # fundamental-CG
 
-My homework of the course of games-101, led by Professor Yan.
+My homework in course GAMES101.
+
+[Course home page](https://sites.cs.ucsb.edu/~lingqi/teaching/games101.html)
 
 1. Draw a triangle using rasterization.
 2. Draw two overlapped triangles using Z-buffer.
@@ -9,4 +11,4 @@ My homework of the course of games-101, led by Professor Yan.
 5. An introduction to Ray-tracing
 6. Ray-tracing accelerated by BVH.
 7. Path-tracing and the rendering equation.
-8. 
+8. Simple spring-mass system.
