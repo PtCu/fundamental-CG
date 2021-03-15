@@ -1,4 +1,4 @@
-# fundamental-CG
+# GAMES101
 
 My homework in course GAMES101.
 
