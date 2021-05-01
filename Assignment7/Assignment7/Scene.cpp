@@ -86,14 +86,14 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     float light_pdf;
     Intersection lightInter;
     sampleLight(lightInter, light_pdf);
-    Vector3f obj2light = objInter.coords - lightInter.coords;
+    Vector3f obj2light =  lightInter.coords-objInter.coords ;
     Vector3f obj2lightDir = obj2light.normalized();
     Ray toLightRay(objInter.coords, obj2lightDir);
     Vector3f Lo_dir(0.f), Lo_indir(0.f);
     Vector3f w_o = -normalize(ray.direction), w_i;
     Vector3f objN = normalize(objInter.normal);
     Vector3f lightN = normalize(lightInter.normal);
-    if (fabs(intersect(toLightRay).distance - obj2light.norm()) < EPSILON)
+    if (intersect(toLightRay).distance - obj2light.norm()> -EPSILON)
     {
         //直接光照
         //入射方向为光源射向物体，出射方向（所求的方向)为参数ray的方向
@@ -103,6 +103,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         float cosA = std::max(.0f, dotProduct(objN, obj2lightDir));
         float cosB = std::max(.0f, dotProduct(lightN, -obj2lightDir));
         Lo_dir = lightInter.emit * f_r * cosA * cosB / r2 / light_pdf;
+  
     }
     hitColor += Lo_dir;
     if (get_random_float() < RussianRoulette)
