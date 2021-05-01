@@ -94,68 +94,26 @@ inline bool Bounds3::IntersectP(const Ray &ray, const Vector3f &invDir,
     // dirIsNeg: ray direction(x,y,z), dirIsNeg=[int(x>0),int(y>0),int(z>0)], use this to simplify your logic
     // TODO test if ray bound intersects
 
-    std::array<float, 3> _min;
-    std::array<float, 3> _max;
-    float t1 = pMin.x - ray.origin.x;
-    float t2 = pMax.x - ray.origin.x;
-    dirIsNeg[0] >
-            0
-        ? (_min[0] = (pMin.x - ray.origin.x) * invDir.x, _max[0] = (pMax.x - ray.origin.x) * invDir.x)
-        : (_min[0] = (pMax.x - ray.origin.x) * invDir.x, _max[0] = (pMin.x - ray.origin.x) * invDir.x);
-    dirIsNeg[1] >
-            0
-        ? (_min[1] = (pMin.y - ray.origin.y) * invDir.y, _max[1] = (pMax.y - ray.origin.y) * invDir.y)
-        : (_min[1] = (pMax.y - ray.origin.y) * invDir.y, _max[1] = (pMin.y - ray.origin.y) * invDir.y);
-    dirIsNeg[2] >
-            0
-        ? (_min[2] = (pMin.z - ray.origin.z) * invDir.z, _max[2] = (pMax.z - ray.origin.z) * invDir.z)
-        : (_min[2] = (pMax.z - ray.origin.z) * invDir.z, _max[2] = (pMin.z - ray.origin.z) * invDir.z);
+    const Bounds3 &bounds = *this;
+    // Check for ray intersection against $x$ and $y$ slabs
+    auto tMin = (bounds[dirIsNeg[0]].x - ray.origin.x) * invDir.x;
+    auto tMax = (bounds[1 - dirIsNeg[0]].x - ray.origin.x) * invDir.x;
+    auto tyMin = (bounds[dirIsNeg[1]].y - ray.origin.y) * invDir.y;
+    auto tyMax = (bounds[1 - dirIsNeg[1]].y - ray.origin.y) * invDir.y;
 
-    float t_enter = *std::max_element(_min.begin(), _min.end());
-    float t_exit = *std::min_element(_max.begin(), _max.end());
+    if (tMin > tyMax || tyMin > tMax) return false;
+    if (tyMin > tMin) tMin = tyMin;
+    if (tyMax < tMax) tMax = tyMax;
 
-    if (t_enter <= t_exit && t_exit >= 0)
-        return true;
-    return false;
-    // float tx_min = (pMin.x - ray.origin.x) * invDir.x;
-    // float tx_max = (pMax.x - ray.origin.x) * invDir.x;
+    // Check for ray intersection against $z$ slab
+    auto tzMin = (bounds[dirIsNeg[2]].z - ray.origin.z) * invDir.z;
+    auto tzMax = (bounds[1 - dirIsNeg[2]].z - ray.origin.z) * invDir.z;
 
-    // float ty_min = (pMin.y - ray.origin.y) * invDir.y;
-    // float ty_max = (pMax.y - ray.origin.y) * invDir.y;
+    if (tMin > tzMax || tzMin > tMax) return false;
+    if (tzMin > tMin) tMin = tzMin;
+    if (tzMax < tMax) tMax = tzMax;
+    return (tMin < ray.t_max) && (tMax > 0);
 
-    // float tz_min = (pMin.z - ray.origin.z) * invDir.z;
-    // float tz_max = (pMax.z - ray.origin.z) * invDir.z;
-
-    // if (!dirIsNeg[0])
-    // {
-    //     float t = tx_min;
-    //     tx_min = tx_max;
-    //     tx_max = t;
-    // }
-
-    // if (!dirIsNeg[1])
-    // {
-    //     float t = ty_min;
-    //     ty_min = ty_max;
-    //     ty_max = t;
-    // }
-
-    // if (!dirIsNeg[2])
-    // {
-    //     float t = tz_min;
-    //     tz_min = tz_max;
-    //     tz_max = t;
-    // }
-
-    // float t_enter = std::max(tx_min, std::max(ty_min, tz_min));
-    // float t_exit = std::min(tx_max, std::min(ty_max, tz_max));
-
-    // if (t_enter <= t_exit && t_exit >= 0)
-    // {
-    //     return true;
-    // }
-
-    // return false;
 }
 
 inline Bounds3 Union(const Bounds3 &b1, const Bounds3 &b2)

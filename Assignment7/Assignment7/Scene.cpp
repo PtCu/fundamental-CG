@@ -72,48 +72,50 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     // TO DO Implement Path Tracing Algorithm here
     //求一条光线与场景的交点
     Intersection objInter = intersect(ray);
-    Vector3f hitcolor = Vector3f(0);
-    if (objInter.emit.norm() > 0)
-        hitcolor = Vector3f(1);
-    else if (objInter.happened)
+    if (!objInter.happened)
     {
-        //根据pdf_light来采样光源点
-        float pdf;
-        Intersection lightInter;
-        //选取的光线，从选取的光源射向物体
-        sampleLight(lightInter, pdf);
-        Vector3f x = lightInter.coords; //光源的坐标
-        Vector3f p = objInter.coords;   //物体的坐标
-
-        //实际的光线
-        Ray sampled_ray = Ray(p, (x - p).normalized());
-
-        Vector3f L_dir = Vector3f(0);
-        Vector3f n = normalize(objInter.normal);
-        Vector3f nn = normalize(lightInter.normal);
-
-        Vector3f wo = normalize(-ray.direction);
-        Vector3f ws = Vector3f(x - p);
-
-        //探测是否有障碍
-        Intersection t = intersect(sampled_ray);
-        if (std::abs(t.distance - (x - p).norm()) < EPSILON)
-        {
-            L_dir = lightInter.emit * lightInter.m->eval(wo, ws, n) * dotProduct(ws, n) * dotProduct(-ws, nn) / ((x - p).norm() * (x - p).norm() * pdf);
-        }
-
-        Vector3f L_indir = Vector3f(0);
-
-        float prob = get_random_float();
-        if (prob < RussianRoulette)
-        {
-            Vector3f wi = objInter.m->sample(wo, n); //得到该物体的一个出射方向，作为下一个不发光物体对该物体的入射方向
-            L_indir = castRay(Ray(p, wi), depth) * objInter.m->eval(wi, wo, n) * dotProduct(wi, n) / (objInter.m->pdf(wi, wo, n) * Scene::RussianRoulette);
-        }
-        hitcolor = L_dir + L_indir;
+        return Vector3f(0.f);
+    }
+    Vector3f hitColor(0.f);
+    if (objInter.m->hasEmission())
+    {
+        return objInter.m->getEmission();
     }
 
-    return hitcolor;
+    // 采样光源点
+    float light_pdf;
+    Intersection lightInter;
+    sampleLight(lightInter, light_pdf);
+    Vector3f obj2light = objInter.coords - lightInter.coords;
+    Vector3f obj2lightDir = obj2light.normalized();
+    Ray toLightRay(objInter.coords, obj2lightDir);
+    Vector3f Lo_dir(0.f), Lo_indir(0.f);
+    Vector3f w_o = -normalize(ray.direction), w_i;
+    Vector3f objN = normalize(objInter.normal);
+    Vector3f lightN = normalize(lightInter.normal);
+    if (fabs(intersect(toLightRay).distance - obj2light.norm()) < EPSILON)
+    {
+        //直接光照
+        //入射方向为光源射向物体，出射方向（所求的方向)为参数ray的方向
+        Vector3f f_r = objInter.m->eval(obj2lightDir, w_o, objN);
+        //对光源采样
+        float r2 = dotProduct(obj2light, obj2light);
+        float cosA = std::max(.0f, dotProduct(objN, obj2lightDir));
+        float cosB = std::max(.0f, dotProduct(lightN, -obj2lightDir));
+        Lo_dir = lightInter.emit * f_r * cosA * cosB / r2 / light_pdf;
+    }
+    hitColor += Lo_dir;
+    if (get_random_float() < RussianRoulette)
+    {
+        //间接光照
+        w_i = objInter.m->sample(w_o, objN).normalized();
+        float cos = std::max(.0f, dotProduct(w_i, objN));
+        Vector3f f_r = objInter.m->eval(w_o, w_i,objN);
+        float pdf = objInter.m->pdf(w_o, w_i, objN);
+        Lo_indir = castRay(Ray(objInter.coords, w_i), depth) * f_r * cos / pdf / RussianRoulette;
+    }
+    hitColor += Lo_indir;
+    return hitColor;
 }
 // // TO DO Implement Path Tracing Algorithm here
 // Intersection intersection = intersect(ray);
